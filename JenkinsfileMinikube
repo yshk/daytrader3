@@ -1,0 +1,48 @@
+pipeline {
+  agent any
+  parameters {
+    string(name: 'DAYTRADER3_CONTEXT_ROOT_URL', defaultValue: 'http://localhost:9080/daytrader')
+  }
+  stages {
+    stage('Continuous Integration') {
+      steps {
+        sh '''
+          cd dt-ejb
+          mvn clean install
+          cd ../Rest
+          mvn clean install
+          cd ../web
+          mvn clean install
+          cd ../daytrader3-ee6
+          mvn clean verify -Pci-docker
+          cd ..
+        '''
+      }
+    }
+  stage('Continuous Delivery') {
+    steps {
+      withCredentials([usernamePassword(credentialsId: '3f105e05-85a8-46a1-950c-55c91b1d0060', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+        sh '''
+          docker tag daytrader-ee6:1.0-SNAPSHOT yshk/daytrader-ee6
+          docker login -u ${USERNAME} -p ${PASSWORD}
+          docker push yshk/daytrader-ee6
+        '''
+      }
+      sh '''
+        #!/bin/bash
+        if kubectl describe service wlp-daytrader-jenkins; then
+          echo "Service already exists, delete first"
+          kubectl delete service wlp-daytrader-jenkins
+        fi
+        if kubectl describe deployment wlp-daytrader-jenkins; then
+          echo "Application already exists, delete first"
+          kubectl delete deployment wlp-daytrader-jenkins
+        fi
+          kubectl run wlp-daytrader-jenkins --image=yshk/daytrader-ee6 --port=9080 --env="DAYTRADER3_CONTEXT_ROOT_URL=${DAYTRADER3_CONTEXT_ROOT_URL}"
+          kubectl expose deployment wlp-daytrader-jenkins --type=NodePort
+          minikube service wlp-daytrader-jenkins --url
+      '''
+      }
+    }
+  }
+}
