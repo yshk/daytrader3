@@ -24,7 +24,6 @@ pipeline {
       withCredentials([usernamePassword(credentialsId: '3f105e05-85a8-46a1-950c-55c91b1d0060', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
         sh '''
           docker tag daytrader3-ee6:1.0-SNAPSHOT yshk/daytrader-ee6
-          //docker tag daytrader-ee6:1.0-SNAPSHOT yshk/daytrader-ee6
           docker login -u ${USERNAME} -p ${PASSWORD}
           docker push yshk/daytrader-ee6
         '''
