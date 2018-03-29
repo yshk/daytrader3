@@ -82,7 +82,10 @@ public class AddressBook {
         return addressList;
     }
 
+    @GET
     @Path("/{entryName}")
+    //@Produces({ "application/json" })
+    @Produces(value = { "application/json" })
     public Address getAddress(@PathParam(value = "entryName") String entryName) {
         Address addr = AddressBookDatabase.getAddress(entryName);
         return addr;
